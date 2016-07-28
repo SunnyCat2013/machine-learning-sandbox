@@ -24,8 +24,8 @@ def main():
     y_ = tf.placeholder(tf.float32, shape=[None, NUM_CLASSES])
 
     # Variables
-    W = tf.Variable(tf.zeros[IMAGE_PIXELS, NUM_CLASSES])
-    b = tf.Variable(tf.zeros[NUM_CLASSES])
+    W = tf.Variable(tf.zeros([IMAGE_PIXELS, NUM_CLASSES]))
+    b = tf.Variable(tf.zeros([NUM_CLASSES]))
 
     # initial the Variables
     sess.run(tf.initialize_all_variables())
@@ -40,7 +40,10 @@ def main():
     train_step = tf.train.GradientDescentOptimizer(0.5).minimize(cross_entropy)
 
     # import street images which containt numbers
-    stnum = read_st_img('street-data/trainResized.zip')
+    stnum_imgs = read_st_img('street-data/trainResized.zip')
+    stnum_labs = read_st_label('street-data/trainLabels.csv')
+
+    stnum_obj = simpleDataSet(stnum_imgs, stnum_labs)
 
     # close session
     sess.close()
@@ -159,8 +162,8 @@ class simpleDataSet(object):
 
 
 if __name__ == '__main__':
-    #main()
-    test = read_st_img('street-data/trainResized.zip')
-    print test[0][0]
+    main()
+    #test = read_st_img('street-data/trainResized.zip')
+    #print test[0][0]
     #read_st_label('street-data/trainLabels.csv')
 
