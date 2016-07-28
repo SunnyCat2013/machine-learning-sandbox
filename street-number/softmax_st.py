@@ -64,9 +64,103 @@ def read_st_img(sfile):
         img = imgarr.ravel()
         imgs.append(img)
 
-    return np.asarray(imgs)
+    temp = np.asarray(imgs, dtype=np.float32)
 
+    return np.multiply(temp, 1.0 / 255.0)
+
+
+def read_st_label(sfile, one_hot=True):
+    # read labels
+    #sfile = 'street-data/trainLables.csv'
+    # get the labels' indices and the labels
+    # return one_hot format
+    dlist = dict()
+    with open(sfile, 'r') as inf:
+        lines = inf.readlines()
+        del lines[0]
+        ln = len(lines)
+        labels = list()
+        for l in lines:
+            l = l.strip().split(',')
+            key = l[1]
+            labels.append(key)
+            dlist[key] = 1
+    keys = dlist.keys()
+    keys.sort()
+    dkey_index = dict()
+    for i, k in enumerate(keys):
+        dkey_index[k] = i
+
+    '''
+    for k in keys:
+        print k, dkey_index[k]
+    print ''
+    '''
+    num_labels = len(labels)
+    num_classes = len(keys)
+
+    #print num_labels, num_classes
+    numer_labels = np.zeros(num_labels, dtype=np.uint8)
+    for i, l in enumerate(labels):
+        numer_labels[i] = dkey_index[l]
+
+    index_offset = np.arange(num_labels) * num_classes
+
+    one_hot = np.zeros((num_labels, num_classes), dtype=np.uint8)
+
+    one_hot.flat[index_offset + numer_labels] = 1
+
+    '''
+    # test
+    for i in range(62):
+        print i,
+    print ''
+    for i in range(10):
+        print i
+        print labels[i]
+        print dkey_index[labels[i]]
+        for l in one_hot[i]:
+            print l,
+        print ''
+    '''
+
+    return one_hot
+
+
+class simpleDataSet(object):
+    def __init__(self, images, labels):
+        self._images = images
+        self._num_examples = images.shape[0]
+        self._labels = labels
+        self._epochs_completed = 0
+        self._index_in_epoch = 0
+
+    def next_batch(self, batch_size):
+        start = self._index_in_epoch
+        self._index_in_epoch += batch_size
+
+        if self._index_in_epoch > self._num_examples:
+            # Finished epoch
+            self._epochs_completed += 1
+
+            # Shuffle the data
+            perm = numpy.arange(self._num_examples)
+            np.random.shuffle(perm)
+            self._images = self._images[perm]
+            self._labels = self._labels[perm]
+            # start next epoch
+            start = 0
+            self._index_in_epoch = batch_size
+            assert batch_size <= self._num_examples
+
+        end = self._index_in_epoch
+
+        return self._images[start:end], self._labels[start:end]
 
 
 if __name__ == '__main__':
-    main()
+    #main()
+    test = read_st_img('street-data/trainResized.zip')
+    print test[0][0]
+    #read_st_label('street-data/trainLabels.csv')
+
