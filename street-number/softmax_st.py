@@ -45,6 +45,14 @@ def main():
 
     stnum_obj = simpleDataSet(stnum_imgs, stnum_labs)
 
+
+    # train!!
+    for i in range(100):
+        if i % 10 == 0:
+            print 'training...', i
+        batch = stnum_obj.next_batch(100)
+        train_step.run(feed_dict={x:batch[0], y_:batch[1]})
+
     # close session
     sess.close()
 
@@ -147,7 +155,7 @@ class simpleDataSet(object):
             self._epochs_completed += 1
 
             # Shuffle the data
-            perm = numpy.arange(self._num_examples)
+            perm = np.arange(self._num_examples)
             np.random.shuffle(perm)
             self._images = self._images[perm]
             self._labels = self._labels[perm]
