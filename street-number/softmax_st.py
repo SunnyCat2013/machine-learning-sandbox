@@ -4,6 +4,8 @@
 
 from PIL import Image
 import numpy as np
+import os
+import sys
 import tensorflow as tf
 
 import zipfile
@@ -15,7 +17,11 @@ NUM_CLASSES = 62
 IMAGE_SIZE = 20
 IMAGE_PIXELS = IMAGE_SIZE * IMAGE_SIZE
 
-def main():
+EPOCH = 100000
+BATCH = 1000
+MODEL_FILE = "./Softmax_%d_epoch_%d_batch.ckpt" % (EPOCH, BATCH)
+
+def main(model_file):
     # active a inter session
     sess = tf.InteractiveSession()
 
@@ -24,39 +30,66 @@ def main():
     y_ = tf.placeholder(tf.float32, shape=[None, NUM_CLASSES])
 
     # Variables
-    W = tf.Variable(tf.zeros([IMAGE_PIXELS, NUM_CLASSES]))
-    b = tf.Variable(tf.zeros([NUM_CLASSES]))
+    W = tf.Variable(tf.zeros([IMAGE_PIXELS, NUM_CLASSES]), name="W")
+    b = tf.Variable(tf.zeros([NUM_CLASSES]), name="b")
 
     # initial the Variables
     sess.run(tf.initialize_all_variables())
+    
+    # saver
+    saver = tf.train.Saver()
 
     # predict function
     y = tf.nn.softmax(tf.matmul(x, W) + b)
 
-    # loss function by cross-entropy error
-    cross_entropy = tf.reduce_mean(-tf.reduce_sum(y_ * tf.log(y), reduction_indices=[1]))
+    # if there are a valid model file
+    if os.path.exists(model_file):
+        print 'restore model file:', model_file
+        saver.restore(sess, model_file)
+    else:
+        # loss function by cross-entropy error
+        cross_entropy = tf.reduce_mean(-tf.reduce_sum(y_ * tf.log(y), reduction_indices=[1]))
 
-    # optimizer and learning rate
-    train_step = tf.train.GradientDescentOptimizer(0.5).minimize(cross_entropy)
+        # optimizer and learning rate
+        train_step = tf.train.GradientDescentOptimizer(0.5).minimize(cross_entropy)
 
-    # import street images which containt numbers
-    stnum_imgs = read_st_img('street-data/trainResized.zip')
-    stnum_labs = read_st_label('street-data/trainLabels.csv')
+        # import street images which containt numbers
+        stnum_imgs = read_st_img('street-data/trainResized.zip')
+        stnum_labs = read_st_label('street-data/trainLabels.csv')
 
-    stnum_obj = simpleDataSet(stnum_imgs, stnum_labs)
+        stnum_obj = simpleDataSet(stnum_imgs, stnum_labs)
 
 
-    # train!!
-    for i in range(100):
-        if i % 10 == 0:
-            print 'training...', i
-        batch = stnum_obj.next_batch(100)
-        train_step.run(feed_dict={x:batch[0], y_:batch[1]})
+        # train!!
+        for i in range(EPOCH):
+            if i % 100 == 0:
+                print 'training...', i
+            batch = stnum_obj.next_batch(BATCH)
+            train_step.run(feed_dict={x:batch[0], y_:batch[1]})
+
+        # save variables
+        save_path = saver.save(sess, MODEL_FILE)
+        print 'Model saved as', save_path
+
+
+    # prediction
+    stnum_test = read_st_img('street-data/testResized.zip', testFile=True)
+    classification = sess.run(tf.argmax(y, 1), {x: stnum_test})
+
+    # save result
+    with open('result_softmax_%d_epoch_%d_batch.csv'%(EPOCH, BATCH), 'w') as of:
+        print >>of, 'ID,Class'
+        keys = read_st_label('street-data/trainLabels.csv', get_key_ind=True)
+        i = 6284
+        for c in classification:
+            print >>of, '%d,%s'%(i, keys[c])
+            i += 1
+
 
     # close session
     sess.close()
 
-def read_st_img(sfile):
+def read_st_img(sfile, testFile=False):
     # read zip file
     archive = zipfile.ZipFile(sfile, 'r')
     file_list = archive.namelist()
@@ -64,6 +97,12 @@ def read_st_img(sfile):
     imgs = list()
 
     del file_list[0] # delete directory name
+    if testFile:
+        file_list.sort(key=lambda x:int(x[12:-4]))
+    with open(sfile.split('/')[-1] + '_detail.txt', 'w') as of:
+        for f in file_list:
+            print >>of, f
+
     for f in file_list:
         imgfile = archive.open(f, 'r')
         img = Image.open(imgfile)
@@ -80,7 +119,7 @@ def read_st_img(sfile):
     return np.multiply(temp, 1.0 / 255.0)
 
 
-def read_st_label(sfile, one_hot=True):
+def read_st_label(sfile, one_hot=True, get_key_ind=False):
     # read labels
     #sfile = 'street-data/trainLables.csv'
     # get the labels' indices and the labels
@@ -98,9 +137,12 @@ def read_st_label(sfile, one_hot=True):
             dlist[key] = 1
     keys = dlist.keys()
     keys.sort()
+    if get_key_ind:
+        return keys # return the labels array list, in which keys[i] = labels
     dkey_index = dict()
     for i, k in enumerate(keys):
         dkey_index[k] = i
+
 
     '''
     for k in keys:
@@ -170,7 +212,11 @@ class simpleDataSet(object):
 
 
 if __name__ == '__main__':
-    main()
+    model_file = ""
+    if len(sys.argv) > 1: # 如果已经有训练好的模型
+        print sys.argv[1]
+        model_file = sys.argv[1]
+    main(model_file)
     #test = read_st_img('street-data/trainResized.zip')
     #print test[0][0]
     #read_st_label('street-data/trainLabels.csv')
