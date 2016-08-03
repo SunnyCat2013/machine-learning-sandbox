@@ -3,6 +3,7 @@
 
 
 from PIL import Image
+from io import BytesIO
 import numpy as np
 import os
 import sys
@@ -108,15 +109,26 @@ def read_st_img(sfile, testFile=False):
     outf = open(sfile + '_reading_order.txt', 'w')
     for f in file_list:
         print >>outf, f
-        imgfile = archive.open(f, 'r')
-        img = Image.open(imgfile)
-        imgfile.close()
+        try:
+            imgfile = archive.open(f, 'r')
+            img = Image.open(imgfile)
+            imgfile.close()
 
-        imgarr = np.asarray(img.convert('L'))
-        img.close()
+            imgarr = np.asarray(img.convert('L'))
+            img.close()
 
-        img = imgarr.ravel()
-        imgs.append(img)
+            img = imgarr.ravel()
+            imgs.append(img)
+        except:
+            imgfile = BytesIO(archive.read(f, 'r'))
+            img = Image.open(imgfile)
+            #imgfile.close()
+
+            imgarr = np.asarray(img.convert('L'))
+            #img.close()
+
+            img = imgarr.ravel()
+            imgs.append(img)
     outf.close()
 
     temp = np.asarray(imgs, dtype=np.float32)
