@@ -5,6 +5,7 @@
 # Date: 20160803 10:22:06
 
 import tensorflow as tf
+import os, sys
 
 from softmax_st import *
 
@@ -15,13 +16,14 @@ IMAGE_PIXEL = IMAGE_HEIGHT * IMAGE_WIDTH
 
 CLASSES = 62
 
-EPOCH = 1000
+EPOCH = 1
 BATCH = 50
 
+MODEL_FILE = "./CNN_%d_epoch_%d_batch.ckpt" % (EPOCH, BATCH)
 
 
 # main function 
-def main():
+def main(model_file):
     # 1. input layer
     x = tf.placeholder(tf.float32, [None, IMAGE_PIXEL])
     y_ = tf.placeholder(tf.float32, [None, CLASSES])
@@ -112,20 +114,51 @@ def main():
     # initialize variables
     sess.run(tf.initialize_all_variables())
 
-    # read data
-    
-    # import street images which containt numbers
-    stnum_imgs = read_st_img('street-data/trainResized.zip')
-    stnum_labs = read_st_label('street-data/trainLabels.csv')
-    stnum_obj = simpleDataSet(stnum_imgs, stnum_labs)
+    saver = tf.train.Saver()
+    # if there are a valid model file
+    if os.path.exists(model_file):
+        ## restore variables
+        saver.restore(sess, model_file)
+    else:
+        # import street images which containt numbers
+        stnum_imgs = read_st_img('street-data/trainResized.zip')
+        stnum_labs = read_st_label('street-data/trainLabels.csv')
+        stnum_obj = simpleDataSet(stnum_imgs, stnum_labs)
+
+       ## train
+        for i in range(EPOCH):
+            batch = stnum_obj.next_batch(50)
+            if i % 100 == 0:
+                print 'training...', i
+            train_step.run(feed_dict={x:batch[0], y_:batch[1], keep_prob1:0.5, keep_prob2:0.5})
+
+        # save variables
+        save_path = save_path = saver.save(sess, MODEL_FILE)
+        print 'Model saved as', save_path
+
+    # prediction
+    print 'reading data'
+    stnum_test = read_st_img('street-data/testResized.zip', testFile=True)
+    print 'predicting...'
+    classification = sess.run(tf.argmax(y_conv, 1), {x: stnum_test, keep_prob1:1.0, keep_prob2:1.0})
+
+    # save result
+    print 'saving...'
+    with open('result_cnn_%d_epoch_%d_batch.csv'%(EPOCH, BATCH), 'w') as of:
+        print >>of, 'ID,Class'
+        keys = read_st_label('street-data/trainLabels.csv', get_key_ind=True)
+        i = 6284
+        arr = "-\\|/"
+        for c in classification:
+            print arr[i % 4],
+            print >>of, '%d,%s'%(i, keys[c])
+            print '\r',
+            i += 1
 
 
-    ## train
-    for i in range(EPOCH):
-        batch = stnum_obj.next_batch(50)
-        if i % 100 == 0:
-            print 'training...', i
-        train_step.run(feed_dict={x:batch[0], y_:batch[1], keep_prob1:0.5, keep_prob2:0.5})
+    # close session
+    sess.close()
+
 
 
 # convolution
@@ -151,4 +184,8 @@ def bias_variable(shape, name):
 
 
 if __name__ == '__main__':
-    main()
+    model_file = ''
+    if len(sys.argv) > 1:
+        model_file = sys.argv[1]
+        print 'using model', model_file
+    main(model_file)
