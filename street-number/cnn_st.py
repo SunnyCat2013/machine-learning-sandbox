@@ -78,15 +78,25 @@ def main():
     h_pool3_flat = tf.reshape(h_pool3, [-1, 3 *  3 * 512])
     h_fc1 = tf.nn.relu(tf.matmul(h_pool3_flat, W_fc1) + b_fc1)
 
-    # 13.dropout layer
-    keep_prob = tf.placeholder(tf.float32)
-    h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob)
+    # 13.dropout layer 1
+    keep_prob1 = tf.placeholder(tf.float32)
+    h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob1)
 
-    # readout layer (full connected layer 2)
-    W_fc2 = weight_variable([2048, CLASSES], 'W_fc2')
-    b_fc2 = bias_variable([CLASSES], 'b_fc2')
+    # 14.full connected layer 2
+    W_fc2 = weight_variable([2048, 2048], 'W_fc2')
+    b_fc2 = bias_variable([2048], 'b_fc2')
+
+    h_fc2 = tf.nn.relu(tf.matmul(h_fc1_drop, W_fc2) + b_fc2)
+
+    # 15.droupout layer 2
+    keep_prob2 = tf.placeholder(tf.float32)
+    h_fc2_drop = tf.nn.dropout(h_fc2, keep_prob2)
+
+    # 16.out layer(full connected layer 3)
+    W_fc3 = weight_variable([2048, CLASSES], 'W_fc3')
+    b_fc3 = bias_variable([CLASSES], 'b_fc3')
     
-    y_conv = tf.nn.softmax(tf.matmul(h_fc1_drop, W_fc2) + b_fc2)
+    y_conv = tf.nn.softmax(tf.matmul(h_fc2_drop, W_fc3) + b_fc3)
 
 # convolution
 def conv2d(x, W):
