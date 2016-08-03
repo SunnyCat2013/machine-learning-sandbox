@@ -99,11 +99,15 @@ def read_st_img(sfile, testFile=False):
     del file_list[0] # delete directory name
     if testFile:
         file_list.sort(key=lambda x:int(x[12:-4]))
+    else:
+        file_list.sort(key=lambda x:int(x[13:-4]))
     with open(sfile.split('/')[-1] + '_detail.txt', 'w') as of:
         for f in file_list:
             print >>of, f
 
+    outf = open(sfile + '_reading_order.txt', 'w')
     for f in file_list:
+        print >>outf, f
         imgfile = archive.open(f, 'r')
         img = Image.open(imgfile)
         imgfile.close()
@@ -113,6 +117,7 @@ def read_st_img(sfile, testFile=False):
 
         img = imgarr.ravel()
         imgs.append(img)
+    outf.close()
 
     temp = np.asarray(imgs, dtype=np.float32)
 
