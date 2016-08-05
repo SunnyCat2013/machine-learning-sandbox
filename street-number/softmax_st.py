@@ -1,11 +1,3 @@
-# -*- coding: utf-8 -*-
-# 我打算使用一个简单的softmax回归模型来对街道的号码的分类工作做一个测试
-
-
-from PIL import Image
-from io import BytesIO
-import numpy as np
-import os
 import sys
 import tensorflow as tf
 
