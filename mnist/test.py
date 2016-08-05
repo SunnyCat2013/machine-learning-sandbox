@@ -79,7 +79,7 @@ def main(model_file):
     W_fc1 = weight_variable([4 * 4 * 512, 2048], 'W_fc1')
     b_fc1 = bias_variable([2048], 'b_fc1')
 
-    h_pool4_flat = tf.reshape(h_pool4, [-1, 4 *  4 * 512])
+    h_pool3_flat = tf.reshape(h_pool3, [-1, 4 *  4 * 512])
     h_fc1 = tf.nn.relu(tf.matmul(h_pool3_flat, W_fc1) + b_fc1)
 
     # 13.dropout layer 1
