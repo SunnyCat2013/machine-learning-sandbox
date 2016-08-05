@@ -5,11 +5,9 @@
 # Date: 20160803 10:22:06
 
 import tensorflow as tf
-from tensorflow.examples.tutorials.mnist import input_data
-
 import os, sys
 
-#from softmax_st import *
+from tensorflow.examples.tutorials.mnist import input_data
 
 # variables that can be changed here
 IMAGE_HEIGHT = 28
@@ -21,7 +19,7 @@ CLASSES = 10
 EPOCH = 1000
 BATCH = 50
 
-MODEL_FILE = "./16_CNN_%d_epoch_%d_batch.ckpt" % (EPOCH, BATCH)
+#MODEL_FILE = "./CNN_%d_epoch_%d_batch.ckpt" % (EPOCH, BATCH)
 
 
 # main function 
@@ -33,13 +31,13 @@ def main(model_file):
     x_image = tf.reshape(x, [-1, IMAGE_HEIGHT, IMAGE_WIDTH, 1])
 
     # 2. convolution layer 1
-    W_conv1 = weight_variable([3, 3, 1, 128], 'W_conv1')
-    b_conv1 = bias_variable([128], 'b_conv1') # 这里的128个输出层中，同层的输出都共享同一个偏置吗？
+    W_conv1 = weight_variable([3, 3, 1, 32], 'W_conv1')
+    b_conv1 = bias_variable([32], 'b_conv1') # 这里的128个输出层中，同层的输出都共享同一个偏置吗？
     h_conv1 = tf.nn.relu(conv2d(x_image, W_conv1) + b_conv1)
     #h_pool1 = max_pool_2x2(h_conv1)
 
     # 3. convolution layer 2
-    W_conv2 = weight_variable([3, 3, 128, 128], 'W_conv2')
+    W_conv2 = weight_variable([3, 3, 32, 128], 'W_conv2')
     b_conv2 = bias_variable([128], 'b_conv2')
     h_conv2 = tf.nn.relu(conv2d(h_conv1, W_conv2) + b_conv2)
 
@@ -78,10 +76,10 @@ def main(model_file):
     h_pool3 = max_pool_2x2(h_conv7)
 
     # 12.full connected layer 1
-    W_fc1 = weight_variable([3 * 3 * 512, 2048], 'W_fc1')
+    W_fc1 = weight_variable([4 * 4 * 512, 2048], 'W_fc1')
     b_fc1 = bias_variable([2048], 'b_fc1')
 
-    h_pool3_flat = tf.reshape(h_pool3, [-1, 3 *  3 * 512])
+    h_pool4_flat = tf.reshape(h_pool4, [-1, 4 *  4 * 512])
     h_fc1 = tf.nn.relu(tf.matmul(h_pool3_flat, W_fc1) + b_fc1)
 
     # 13.dropout layer 1
@@ -116,34 +114,28 @@ def main(model_file):
     # initialize variables
     sess.run(tf.initialize_all_variables())
 
-    saver = tf.train.Saver()
     # if there are a valid model file
     if os.path.exists(model_file):
         ## restore variables
-        saver.restore(sess, model_file)
+        print 'haha'
     else:
         # import street images which containt numbers
-        #stnum_imgs = read_st_img('street-data/trainResized.zip')
-        #stnum_labs = read_st_label('street-data/trainLabels.csv')
-        #stnum_obj = simpleDataSet(stnum_imgs, stnum_labs)
-        mnist = input_data.read_data_sets('MNIST_data', one_hot=True)
+
+        mnist = input_data.read_data_sets('MNIST_data', one_hot = True)
        ## train
         for i in range(EPOCH):
-            batch = mnist.train.next_batch(50)
+            batch = mnist.train.next_batch(BATCH)
             if i % 100 == 0:
-                #print 'training...', 
-                train_accuracy = accuracy.eval(feed_dict = {x: batch[0], y_: batch[1], keep_prob1:0.5, keep_prob2:0.5})
-                print 'training step %d, the accuracy: %g'%(i, train_accuracy)
+                #print 'training...', i
+                train_accuracy = accuracy.eval(feed_dict = {x:batch[0], y_:batch[1], keep_prob1: 1.0, keep_prob2: 1.0})
+                print 'training step %d, the accuracy %g'%(i, train_accuracy)
             train_step.run(feed_dict={x:batch[0], y_:batch[1], keep_prob1:0.5, keep_prob2:0.5})
 
-        # save variables
-        save_path = save_path = saver.save(sess, MODEL_FILE)
-        print 'Model saved as', save_path
 
-    # test
-    test_accuracy = accuracy.eval(feed_dict = {x: mnist.test.images, y_: mnist.test.labels, keep_prob1: 1.0, keep_prob2: 1.0})
-    print 'the test accuracy: %g'%test_accuracy
-    # close session
+
+    text_accuracy = accuracy.eval(feed_dict = {x: mnist.test.images, y_:mnist.test.labels, keep_prob1: 1.0, keep_prob2: 1.0})
+    print 'test accuracy %g'%test_accuracy
+
     sess.close()
 
 
