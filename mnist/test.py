@@ -37,20 +37,20 @@ def main(model_file):
     #h_pool1 = max_pool_2x2(h_conv1)
 
     # 3. convolution layer 2
-    W_conv2 = weight_variable([3, 3, 32, 128], 'W_conv2')
-    b_conv2 = bias_variable([128], 'b_conv2')
+    W_conv2 = weight_variable([3, 3, 32, 64], 'W_conv2')
+    b_conv2 = bias_variable([64], 'b_conv2')
     h_conv2 = tf.nn.relu(conv2d(h_conv1, W_conv2) + b_conv2)
 
     # 4. pool layer 1
     h_pool1 = max_pool_2x2(h_conv2)
 
     # 5. convolution layer 3
-    W_conv3 = weight_variable([3, 3, 128, 256], 'W_conv3')
-    b_conv3 = bias_variable([256],'b_conv3')
+    W_conv3 = weight_variable([3, 3, 64, 128], 'W_conv3')
+    b_conv3 = bias_variable([128],'b_conv3')
     h_conv3 = tf.nn.relu(conv2d(h_pool1, W_conv3) + b_conv3)
 
     # 6. convolution layer 4
-    W_conv4 = weight_variable([3, 3, 256, 256], 'W_conv4')
+    W_conv4 = weight_variable([3, 3, 128, 256], 'W_conv4')
     b_conv4 = bias_variable([256], 'b_conv4')
     h_conv4 = tf.nn.relu(conv2d(h_conv3, W_conv4) + b_conv4)
 
