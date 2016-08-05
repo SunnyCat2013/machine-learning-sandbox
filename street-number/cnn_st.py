@@ -129,7 +129,9 @@ def main(model_file):
         for i in range(EPOCH):
             batch = stnum_obj.next_batch(50)
             if i % 100 == 0:
-                print 'training...', i
+                train_accuracy = accuracy.eval(feed_dict={x:batch[0], y_:batch[1], keep_prob1:0.5, keep_prob2:0.5})
+                print 'training steps:', i, ' accuracy:', train_accuracy
+
             train_step.run(feed_dict={x:batch[0], y_:batch[1], keep_prob1:0.5, keep_prob2:0.5})
 
         # save variables
